@@ -2,8 +2,8 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
-function Login() {
-  const [email, setEmail] = useState("");
+function AdminLogin() {
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState({ text: "", type: "" });
@@ -13,20 +13,20 @@ function Login() {
     e.preventDefault();
     setIsLoading(true);
     setMessage({ text: "", type: "" });
+    
     try {
       const response = await axios.post(
-        "https://user-service-car-management-production.up.railway.app/api/auth/login",
-        { email, password }
+        "https://user-service-car-management-production.up.railway.app/api/auth/login/admin",
+        { username, password }
       );
-      localStorage.setItem("token", response.data.token);
-      setMessage({ text: "Login successful!", type: "success" });
-      setTimeout(() => navigate("/dashboard"), 1000);
+      localStorage.setItem("adminToken", response.data.token);
+      setMessage({ text: "Admin login successful!", type: "success" });
+      setTimeout(() => navigate("/admin/dashboard"), 1000);
     } catch (error) {
-      console.error("Login failed", error);
-      setMessage({
-        text:
-          error.response?.data?.message || "Login failed. Please try again.",
-        type: "error",
+      console.error("Admin login failed", error);
+      setMessage({ 
+        text: error.response?.data?.message || "Admin login failed. Please try again.", 
+        type: "error" 
       });
     } finally {
       setIsLoading(false);
@@ -34,21 +34,23 @@ function Login() {
   };
 
   return (
-    <main className="p-3 h-screen">
+    <main className="p-3">
       <div className="uppercase leading-none">
         <p className="font-bold">drive sync</p>
-        <p className="opacity-50">car management app</p>
+        <p className="opacity-50">admin portal</p>
       </div>
-      <div className="flex flex-col justify-center items-center mt-[20vh]">
+      <div className="flex flex-col justify-center items-center">
         <form onSubmit={handleSubmit} className="p-4 w-full max-w-md">
-          <h2 className="mb-4 font-medium text-5xl">Welcome, login to your account</h2>
-          <div className="mb-4 mt-10">
+          <h2 className="mb-4 uppercase font-medium text-2xl">
+            Admin Login
+          </h2>
+          <div className="mb-4">
             <input
-              type="email"
-              name="email"
-              placeholder="Email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              type="text"
+              name="username"
+              placeholder="Username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
               required
               className="w-full py-2 border-b"
               disabled={isLoading}
@@ -68,13 +70,7 @@ function Login() {
           </div>
           
           {message.text && (
-            <div
-              className={`mt-4 p-2 rounded ${
-                message.type === "success"
-                  ? "bg-green-100 text-green-800"
-                  : "bg-red-100 text-red-800"
-              }`}
-            >
+            <div className={`mt-4 p-2 rounded ${message.type === "success" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}>
               {message.text}
             </div>
           )}
@@ -84,12 +80,11 @@ function Login() {
             disabled={isLoading}
             className="p-2 mt-5 bg-[#181818] text-[#f6f6f6] w-full rounded-lg transition-all duration-300 ease-in-out hover:bg-[#333333] disabled:opacity-50"
           >
-            {isLoading ? "Processing..." : "Login"}
+            {isLoading ? "Processing..." : "Admin Login"}
           </button>
-          <div className="flex justify-between mt-2 font-medium">
-            <p>Don't have an account?</p>
-            <a href="/register" className="underline-link is--alt">
-              Register
+          <div className="flex justify-center mt-2 font-medium">
+            <a href="/" className="underline-link is--alt">
+              Back to User Login
             </a>
           </div>
         </form>
@@ -98,4 +93,4 @@ function Login() {
   );
 }
 
-export default Login;
+export default AdminLogin;
