@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useNavigate, Link } from 'react-router-dom';
-
+import { jwtDecode } from 'jwt-decode';// Make sure to install jsonwebtoken package
 
 function Reservations() {
+  const navigate = useNavigate();
   const [reservations, setReservations] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [clientId, setClientId] = useState(null);
   const [formData, setFormData] = useState({
-    clientId: '',
     carId: '',
     startDate: '',
     endDate: '',
@@ -17,13 +18,23 @@ function Reservations() {
   const [editingReservationId, setEditingReservationId] = useState(null);
 
   useEffect(() => {
-    const fetchReservations = async () => {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        window.location.href = '/';
-        return;
-      }
+    const token = localStorage.getItem('token');
+    if (!token) {
+      window.location.href = '/';
+      return;
+    }
 
+    try {
+      // Decode the token to get the client ID
+      const decoded = jwtDecode(token);
+      setClientId(decoded.clientId); // Assumes the token contains a clientId field
+    } catch (error) {
+      console.error('Failed to decode token', error);
+      window.location.href = '/';
+      return;
+    }
+
+    const fetchReservations = async () => {
       try {
         const response = await axios.get(
           'https://reservations-and-bills-services-production.up.railway.app/api/reservation',
@@ -50,11 +61,14 @@ function Reservations() {
     try {
       const response = await axios.post(
         'https://reservations-and-bills-services-production.up.railway.app/api/reservation',
-        formData,
+        {
+          ...formData,
+          clientId: clientId // Use the clientId from the token
+        },
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setReservations([...reservations, response.data]);
-      setFormData({ clientId: '', carId: '', startDate: '', endDate: '', status: 'pending', totalPrice: '' });
+      setFormData({ carId: '', startDate: '', endDate: '', status: 'pending', totalPrice: '' });
     } catch (error) {
       console.error('Failed to create reservation', error);
     }
@@ -66,7 +80,10 @@ function Reservations() {
     try {
       const response = await axios.put(
         `https://reservations-and-bills-services-production.up.railway.app/api/reservation/${editingReservationId}`,
-        formData,
+        {
+          ...formData,
+          clientId: clientId // Use the clientId from the token
+        },
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setReservations(
@@ -75,7 +92,7 @@ function Reservations() {
         )
       );
       setEditingReservationId(null);
-      setFormData({ clientId: '', carId: '', startDate: '', endDate: '', status: 'pending', totalPrice: '' });
+      setFormData({ carId: '', startDate: '', endDate: '', status: 'pending', totalPrice: '' });
     } catch (error) {
       console.error('Failed to update reservation', error);
     }
@@ -98,7 +115,6 @@ function Reservations() {
   const handleEditClick = (reservation) => {
     setEditingReservationId(reservation._id);
     setFormData({
-      clientId: reservation.clientId,
       carId: reservation.carId,
       startDate: reservation.startDate,
       endDate: reservation.endDate,
@@ -116,7 +132,7 @@ function Reservations() {
 
   return (
     <main className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
-         <header className="bg-white shadow-sm">
+      <header className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8 flex justify-between items-center">
           <div className="uppercase leading-none">
             <p className="font-bold">drive sync</p>
@@ -154,17 +170,7 @@ function Reservations() {
         <h2 className="text-lg font-medium mb-4">
           {editingReservationId ? 'Edit Reservation' : 'Create Reservation'}
         </h2>
-        <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700">Client ID</label>
-          <input
-            type="text"
-            name="clientId"
-            value={formData.clientId}
-            onChange={(e) => setFormData({ ...formData, clientId: e.target.value })}
-            required
-            className="w-full p-2 border rounded-md"
-          />
-        </div>
+        
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700">Car ID</label>
           <input
